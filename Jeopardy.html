@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeopardy - 3 Teams</title>
+    <style>
+        :root {
+            --jeopardy-blue: #060CE9;
+            --jeopardy-dark: #010499;
+            --jeopardy-yellow: #FFCC00;
+            --jeopardy-white: #FFFFFF;
+            --team1-color: #FF6B6B;
+            --team2-color: #4ECDC4;
+            --team3-color: #FFD166;
+            --dark-bg: #0a0a2a;
+            --card-bg: #11113a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg), #1a1a4a);
+            color: var(--jeopardy-white);
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Header & Scoreboard */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+            letter-spacing: 2px;
+            background: linear-gradient(to right, var(--jeopardy-yellow), #fff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        #scoreboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 900px;
+            margin: 0 auto 25px;
+            padding: 15px;
+            background: rgba(1, 4, 120, 0.4);
+            border-radius: 15px;
+            border: 2px solid var(--jeopardy-yellow);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .team-score {
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .team-score:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .team1 { 
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.1));
+            border-color: var(--team1-color);
+        }
+        .team2 { 
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(78, 205, 196, 0.1));
+            border-color: var(--team2-color);
+        }
+        .team3 { 
+            background: linear-gradient(135deg, rgba(255, 209, 102, 0.2), rgba(255, 209, 102, 0.1));
+            border-color: var(--team3-color);
+        }
+
+        .team-name {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .team-name::before {
+            content: "";
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .team1 .team-name::before { background: var(--team1-color); }
+        .team2 .team-name::before { background: var(--team2-color); }
+        .team3 .team-name::before { background: var(--team3-color); }
+
+        .score-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--jeopardy-yellow);
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+
+        /* Game Board */
+        #game-container {
+            width: 100%;
+            max-width: 1400px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            border: 3px solid var(--jeopardy-blue);
+            margin-bottom: 30px;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 10px 5px;
+        }
+
+        /* Category Column */
+        .category-column {
+            display: flex;
+            flex-direction: column;
+            background: rgba(6, 12, 233, 0.15);
+            border-radius: 15px;
+            border: 2px solid var(--jeopardy-blue);
+            overflow: hidden;
+        }
+
+        .category-header {
+            background: linear-gradient(to bottom, var(--jeopardy-blue), var(--jeopardy-dark));
+            color: var(--jeopardy-white);
+            font-weight: bold;
+            text-align: center;
+            padding: 18px 10px;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 3px solid var(--jeopardy-yellow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .questions-list {
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* Question Cells */
+        .question-cell {
+            background: linear-gradient(135deg, var(--jeopardy-blue), #1a1aff);
+            color: var(--jeopardy-yellow);
+            font-size: 1.35rem;
+            font-weight: bold;
+            padding: 16px 10px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            min-height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .question-cell:hover {
+            transform: translateY(-3px);
+            background: linear-gradient(135deg, #1a1aff, #3333ff);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            border-color: var(--jeopardy-yellow);
+        }
+
+        .question-cell.answered {
+            background: linear-gradient(135deg, #2a2a4a, #1a1a3a);
+            color: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            border-color: #444;
+        }
+
+        /* Modal */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 5, 30, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #modal-content {
+            background: linear-gradient(145deg, var(--card-bg), var(--jeopardy-dark));
+            border: 4px solid var(--jeopardy-yellow);
+            border-radius: 25px;
+            padding: 35px;
+            width: 100%;
+            max-width: 850px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.4), 0 15px 50px rgba(0, 0, 0, 0.7);
+            position: relative;
+            animation: modalPop 0.3s ease-out;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        #modal-category {
+            color: var(--team2-color);
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        #modal-question {
+            font-size: 2.4rem;
+            margin: 20px 0 30px;
+            line-height: 1.4;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        #modal-answer {
+            font-size: 2.1rem;
+            color: var(--jeopardy-yellow);
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(255, 204, 0, 0.15);
+            border-radius: 15px;
+            border-left: 4px solid var(--jeopardy-yellow);
+            display: none;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 25px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-reveal { 
+            background: linear-gradient(135deg, var(--jeopardy-white), #e0e0ff); 
+            color: var(--jeopardy-dark);
+            font-size: 1.4rem;
+        }
+        
+        .btn-correct { 
+            background: linear-gradient(135deg, #28a745, #20c997); 
+            color: white; 
+        }
+        
+        .btn-wrong { 
+            background: linear-gradient(135deg, #dc3545, #e66465); 
+            color: white; 
+        }
+
+        .team-select {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 25px 0;
+        }
+
+        .team-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .team-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .team-btn.team1 { background: linear-gradient(135deg, var(--team1-color), #ff5252); }
+        .team-btn.team2 { background: linear-gradient(135deg, var(--team2-color), #44b8ae); }
+        .team-btn.team3 { background: linear-gradient(135deg, var(--team3-color), #ffc44d); }
+
+        .scoring-section {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed rgba(255,255,255,0.3);
+        }
+
+        .scoring-title {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            color: var(--jeopardy-yellow);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1100px) {
+            #game-board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            h1 { font-size: 2.3rem; }
+            .score-value { font-size: 1.9rem; }
+            #modal-question { font-size: 2rem; }
+            #modal-answer { font-size: 1.8rem; }
+        }
+
+        @media (max-width: 700px) {
+            #game-board {
+                grid-template-columns: 1fr;
+            }
+            #scoreboard {
+                grid-template-columns: 1fr;
+            }
+            .team-select {
+                grid-template-columns: 1fr;
+            }
+            h1 { font-size: 2rem; }
+            .category-header { font-size: 1.2rem; padding: 15px 8px; }
+            .question-cell { font-size: 1.2rem; padding: 14px 8px; min-height: 60px; }
+            #modal-content { padding: 25px 20px; margin: 10px; }
+            #modal-question { font-size: 1.7rem; min-height: 80px; }
+            #modal-answer { font-size: 1.6rem; }
+            .btn { padding: 12px 20px; font-size: 1.15rem; }
+        }
+
+        /* Scrollbar styling */
+        #game-board::-webkit-scrollbar {
+            width: 10px;
+        }
+        #game-board::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        #game-board::-webkit-scrollbar-thumb {
+            background: var(--jeopardy-yellow);
+            border-radius: 10px;
+            border: 2px solid var(--card-bg);
+        }
+        #game-board::-webkit-scrollbar-thumb:hover {
+            background: #e6b800;
+        }
+
+        /* Instructions footer */
+        .instructions {
+            text-align: center;
+            max-width: 800px;
+            margin: 15px auto;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎯 JEOPARDY ARENA</h1>
+        
+        <div id="scoreboard">
+            <div class="team-score team1">
+                <div class="team-name">Team DoNate</div>
+                <div class="score-value" id="score1">$0</div>
+            </div>
+            <div class="team-score team2">
+                <div class="team-name">Team KeNaya</div>
+                <div class="score-value" id="score2">$0</div>
+            </div>
+            <div class="team-score team3">
+                <div class="team-name">Team ByNat</div>
+                <div class="score-value" id="score3">$0</div>
+            </div>
+        </div>
+    </header>
+
+    <div id="game-container">
+        <div id="game-board">
+            <!-- Board generated by JavaScript -->
+        </div>
+    </div>
+
+    <div class="instructions">
+        <strong>How to Play:</strong> Click any question to reveal it. After reading the clue, click "Reveal Answer". 
+        Then select which team answered and whether they were correct. Scores update automatically!
+    </div>
+
+    <!-- Question Modal -->
+    <div id="modal">
+        <div id="modal-content">
+            <div id="modal-category">Category Name</div>
+            <div id="modal-question">Question text appears here...</div>
+
+            <div id="modal-image-container" style="display: none; margin: 20px 0;">
+            <img id="modal-image" src="" alt="Answer Image" 
+                 style="max-width: 100%; max-height: 300px; border-radius: 10px; 
+                        border: 3px solid var(--jeopardy-yellow); 
+                        box-shadow: 0 5px 20px rgba(0,0,0,0.5);">
+            </div>
+
+            <div id="modal-answer">Answer text appears here...</div>
+            
+            <button class="btn btn-reveal" onclick="revealAnswer()">👁️ Reveal Answer</button>
+            
+            <div class="scoring-section" id="scoring-section">
+                <div class="scoring-title">Which team answered?</div>
+                <div class="team-select">
+                    <button class="team-btn team1" onclick="selectTeam(1)">Team DoNate</button>
+                    <button class="team-btn team2" onclick="selectTeam(2)">Team KeNaya</button>
+                    <button class="team-btn team3" onclick="selectTeam(3)">Team ByNat</button>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-correct" onclick="handleScore(true)">✓ Correct (+$<span id="modal-value"></span>)</button>
+                    <button class="btn btn-wrong" onclick="handleScore(false)">✗ Wrong (-$<span id="modal-value"></span>)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONFIGURATION ---
+        const categories = [
+            "Databases", 
+            "Database Users", 
+            "DS Concepts and Architecture", 
+            "Entity-Relationship Model"
+        ];
+        
+        const POINTS_PER_CATEGORY = 20; // 100 to 2000
+        const teams = [
+            { id: 1, name: "Team DoNate", score: 0, element: null },
+            { id: 2, name: "Team KeNaya", score: 0, element: null },
+            { id: 3, name: "Team ByNat", score: 0, element: null }
+        ];
+        
+        let currentQuestion = null;
+        let selectedTeam = null;
+
+        // --- DATA GENERATION ---
+        // Placeholder data - REPLACE THESE WITH YOUR ACTUAL QUESTIONS
+        const gameData = [
+    {
+        name: "Databases",  // Category 1
+        questions: [
+            { value: 100, question: "It is a collection of related data.", answer: "Database" },
+            { value: 200, question: "It is a general-purpose software system that facilitates the processes of defining, constructing, manipulating, and sharing databases among various users and applications", answer: "Database Management System (DBMS)?" },
+            { value: 300, question: "It refers to fetching data from a database.", answer: "Query" },
+            { value: 400, question: "It can cause some data to be written/changed.", answer: "Transaction" },
+            { value: 500, question: "It refers to specifying data types, structures, and constraints of the data to be stored in the database.", answer:"Defining a Database" },
+            { value: 600, question: "Database + DBMS", answer: "Database System"},
+            { value: 700, question: "It refers to querying the database to retrieve specific data, updating the database to reflect changes, and generate reports.", answer: "Manipulating a Database"},
+            { value: 800, question: "It is protection against hardware or software malfunction", answer: "System Protection"},
+            { value: 900, question: "It is protection against unauthorized or malicious access.", answer: "Security Protection"},
+            { value: 1000, question: "It refers to allowing the system to evolve as requirements change over time.", answer: "Maintaining a Database"},
+            { value: 1100, question: "It is the process of storing the data on some storage medium that is controlled by the DBMS.", answer: "Constructing a Database"},
+            { value: 1200, question: "It is the process of hiding data storage and implementation details with purpose of achieving data independence.", answer: "Data Abstraction"},
+            { value: 1300, question: "It is the ability to make changes in database structure without the need to make changes to accessing programs", answer: "Program-Data independence (or Data Independence)"},
+            { value: 1400, question: "It is a subset of the database or virtual data (derived) with purpose of presenting a different perspective of the database.", answer: "View"},
+            { value: 1500, question: "It is a characteristic of DSA which refers to the complete definition/description of database structure and constraints.", answer: "Self-Describing Nature of a Database System"},
+            { value: 1600, question: "It is a characteristic of DSA which refers to providing facilities for defining multiple views since database system is multiuser and used by variety of distinct applications.", answer: "Support of Multiple Views of the Data"},
+            { value: 1700, question: "It is a characteristic of DSA which allows multiple users to access the database at the same time. It includes concurrency control to ensure that several users trying to update the same data do so in a controlled manner so that the change result is correct.", answer: "Sharing of Data & Multiuser Transaction Processing"},
+            { value: 1800, question: "Name all the characteristics of the Database System Approach.", answer: "",image: "images/characteristics.png"},
+            { value: 1900, question: "Name all the disadvantages of the Database System Approach", answer:"", image: "images/disadvantages.png"},
+            { value: 2000, question: "Name at least 5 Advantages of Database System Approach", answer: "", image: "images/advantages.png"}
+        ]
+    },
+    {
+        name: "Database Users",  // Category 2
+        questions: [
+            { value: 100, question: "They are responsible for authorizing access to the datbase, coordinating, and monitoring the use and acquisition of software and hardware resources.", answer: "Database Administrators"},
+            { value: 200, question: "They identify the data to be stored in the database and creates appropriate structures to represent and store data.", answer: "Database Designers"},
+            { value: 300, question: "They determine the requirements of end users and develop specifications of standard canned transactions to meet the above requirements.", answer: "System Analysts"},
+            { value: 400, question: "These are the characteristics of the Database System Approach.", answer: "Database Designers"},
+            { value: 500, question: "These are the types of end users.", answer: "Casual, Naive, Sophisticated, Standalone"},
+            { value: 600, question: "It is a user with occasional access to the database which makes use of a sophisticated database query interface to specify request and are typically middle or high-level managers", answer: "Casual End Users"},
+            { value: 700, question: "It is composed of engineers, scientists, business analysts, and others who thoroughly  familiarize themselves with the DBMS facilities.", answer: "Sophisticated End Users"},
+            { value: 800, question: "It is also called parametric with job function that revolves around constantly querying and updating the database using standard types of queries and updates", answer: "Naive End Users"},
+            { value: 900, question: "They maintain personal databases by using ready-made program packages that provide easy-to-use interfaces", answer: "Standalone End Users"},
+            { value: 1000, question: "They implement the given specifications as programs and tests, debugs, documents, and maintains these canned transactions.", answer: "Application Programmers / Software Engineers"},
+            { value: 1100, question: "They are responsible for actual running and maintenance of the hardware and software environment for the database system.", answer: "Operators & Maintenance Personnel"},
+            { value: 1200, question: "They design and implement tools, i.e., the software packages that assist with data modeling and design, database system monitoring, performance improvement.", answer: "Tool Developers"},
+            { value: 1300, question: "They design and implement the DBMS modules and interfaces as software packages.", answer: "DBMS System Designers & Implementers"},
+            { value: 1400, question: "Name all the actors on the scene whose jobs involve day-to-day use of database.", answer: "Database Administrators, Database Designers, End Users, System Analysts, Application Programmers / Software Engineers"},
+            { value: 1500, question: "Name all the workers behind the scene who maintain the database system environment and not actively interested in the database content.", answer: "DBMS System Designers & Implementers, Tool Developers, Operators & Maintenance Personnel"}
+        ]
+    },
+    {
+        name: "DS Concepts and Architecture",  // Category 3
+        questions: [
+            { value: 100, question: "It is a collection of concepts that can be used to describe the structure of a database.", answer: "Data Model" },
+            { value: 200, question: "This type of data model provides concepts close to the way users perceive data, using entities, attributes, and relationships.", answer: "Conceptual (or High-level) Data Model" },
+            { value: 300, question: "These data models are used most frequently in traditional commercial DBMSs and include relational, network, and hierarchical models.", answer: "Representational (or Implementation) Data Models" },
+            { value: 400, question: "This type of data model describes the details of how data is stored on computer storage media, including record formats, orderings, and access paths.", answer: "Physical (or Low-level) Data Model" },
+            { value: 500, question: "It is the description of the database, specified during database design and not expected to change frequently.", answer: "Schema (or Database Schema)" },
+            { value: 600, question: "It refers to the data in the database at a particular moment in time, also called a database snapshot.", answer: "Database State" },
+            { value: 700, question: "This is a database state that satisfies the structure and constraints specified in the schema.", answer: "Valid State" },
+            { value: 800, question: "It is the description of schema constructs and constraints, stored in the database catalog or dictionary.", answer: "Meta-data" },
+            { value: 900, question: "This architecture helps achieve data independence with three levels: external, conceptual, and internal.", answer: "Three-Schema Architecture" },
+            { value: 1000, question: "This schema describes the physical storage structure of the database using a physical data model.", answer: "Internal Schema" },
+            { value: 1100, question: "This schema describes the structure of the whole database for a community of users.", answer: "Conceptual Schema" },
+            { value: 1200, question: "This schema describes the part of the database that a particular user group is interested in.", answer: "External Schema (or User View)" },
+            { value: 1300, question: "It is the process of transforming requests and results between levels in the three-schema architecture.", answer: "Mapping" },
+            { value: 1400, question: "This is the capacity to change the conceptual schema without having to change external schemas or application programs.", answer: "Logical Data Independence" },
+            { value: 1500, question: "This is the capacity to change the internal schema without having to change the conceptual schema.", answer: "Physical Data Independence" },
+            { value: 1600, question: "This language is used by DBAs and database designers to define or modify the description of the database.", answer: "Data Definition Language (DDL)" },
+            { value: 1700, question: "This language is used by database users to manipulate the database through retrieval, insertion, deletion, and modification.", answer: "Data Manipulation Language (DML)" },
+            { value: 1800, question: "This language specifies database access control by granting or revoking privileges to or from users.", answer: "Data Control Language (DCL)" },
+            { value: 1900, question: "This language allows database users to manipulate the processing of transactions.", answer: "Transaction Control Language (TCL)?" },
+            { value: 2000, question: "These are the two types of data independence in the three-schema architecture.", answer: "Logical Data Independence and Physical Data Independence" },
+            { value: 2100, question: "It processes schema definitions specified in the DDL and stores/updates the meta-data in the database system catalog.", answer: "DDL Compiler" },
+            { value: 2200, question: "Also known as Data Dictionary, it includes information such as names/data types of data items, storage details of files, and constraints.", answer: "Database System Catalog" },
+            { value: 2300, question: "It parses and validates queries for correctness of syntax and file/data element names, then compiles queries into internal form.", answer: "Query Compiler" },
+            { value: 2400, question: "It is concerned with rearrangement/reorder of operations, elimination of redundancies, and use of efficient search algorithms prior to execution.", answer: "Query Optimizer" },
+            { value: 2500, question: "These subsystems work with the Runtime Database Processor for the purpose of transaction management.", answer: "Concurrency Control and Backup & Recovery" },
+            { value: 2600, question: "This type of client is dependent on another machine like a server to complete a process.", answer: "Thin Client" },
+            { value: 2700, question: "This type of client/server architecture was used in earlier generation database applications where the application resides at the client machine and invokes database functionality at the server.", answer: "Two-Tier Client/Server Architecture" },
+            { value: 2800, question: "This architecture uses a client machine as merely a front end that communicates with an application server where business logic is embedded, while the database server provides the data.", answer: "Three-Tier Client/Server Architecture" },
+            { value: 2900, question: "Name the four main database system utilities.", answer: "Loading, Backup, Database Storage Reorganization, Performance Monitoring" },
+            { value: 3000, question: "Name the four criteria used for DBMS classification.", answer: "Data Model, Number of Users, Number of Sites, Cost" }
+        ]
+    },
+    {
+        name: "Entity-Relationship Model",  // Category 4
+        questions: [
+        { value: 100, question: "This is the first phase of database design where designers interview prospective users to understand and document data requirements.", answer: "Requirements Collection and Analysis" },
+        { value: 200, question: "This phase enables database designers to concentrate on specifying the properties of data without being too concerned with storage and implementation details.", answer: "Conceptual Design" },
+        { value: 300, question: "This is the output of Conceptual Design that is easier to understand and can be used to communicate with nontechnical users.", answer: "Conceptual Schema" },
+        { value: 400, question: "In this phase, the conceptual data model is transformed into a representational or implementation data model.", answer: "Logical Design" },
+        { value: 500, question: "In this phase, internal storage structures, file organizations, indexes, access paths, and other physical design parameters are specified.", answer: "Physical Design" },
+        { value: 600, question: "This is a thing or object in the real world with an independent existence, which may be physical or conceptual.", answer: "Entity" },
+        { value: 700, question: "This is a particular property that describes an entity.", answer: "Attribute" },
+        { value: 800, question: "This defines a collection or set of entities that have the same attributes and describes the schema for a set of entities that share the same structure.", answer: "Entity Type" },
+        { value: 900, question: "This is the collection of all entities of a particular entity type in the database at any point in time, also called entity collection.", answer: "Entity Set" },
+        { value: 1000, question: "This type of entity has one or more key attributes and is represented using a regular rectangle.", answer: "Strong Entity" },
+        { value: 1100, question: "This type of entity has no key attributes, normally has a partial key, and is represented using double rectangles.", answer: "Weak Entity" },
+        { value: 1200, question: "This type of attribute is not divisible and represents the most basic unit of data.", answer: "Atomic or Simple Attribute" },
+        { value: 1300, question: "This type of attribute can be divided into smaller subparts which represent more basic attributes with independent meanings.", answer: "Composite Attribute" },
+        { value: 1400, question: "This type of attribute can have a set of values for the same entity and is represented by double ovals.", answer: "Multivalued Attribute" },
+        { value: 1500, question: "This type of attribute has its value determined using other attributes or properties, and is represented by a dashed oval.", answer: "Derived Attribute" },
+        { value: 1600, question: "This type of attribute involves nesting of composite and/or multivalued attributes.", answer: "Complex Attribute" },
+        { value: 1700, question: "This attribute can uniquely identify weak entities that are related to the same owner entity, and its name is underlined with a broken line.", answer: "Partial Key" },
+        { value: 1800, question: "This defines a set of associations among entities from the involved entity types and is displayed as a diamond-shaped box in ER diagrams.", answer: "Relationship Type" },
+        { value: 1900, question: "This specifies the maximum number of relationship instances that an entity can participate in, such as 1:1, 1:N, N:1, or M:N.", answer: "Cardinality Ratio" },
+        { value: 2000, question: "This specifies whether the existence of an entity depends on its being related to another entity via the relationship type, with two types being Total and Partial.", answer: "Participation Constraint" },
+        { value: 2100, question: "This type of participation is represented by a double line and is also called Existence Dependency.", answer: "Total Participation" },
+        { value: 2200, question: "This type of participation is represented by a single line in ER diagrams.", answer: "Partial Participation" },
+        { value: 2300, question: "This is the number of participating entity types in a relationship, where 2 equals binary and 3 equals ternary.", answer: "Relationship Degree" },
+        { value: 2400, question: "Relationship types involving a weak entity type are also weak and are represented by this symbol.", answer: "Double Diamond" },
+        { value: 2500, question: "In ER diagram notation, entity types are represented by this shape.", answer: "Rectangular Box" },
+        { value: 2600, question: "In ER diagram notation, attributes are represented by this shape attached to the entity type by a straight line.", answer: "Oval or Ellipse" },
+        { value: 2700, question: "According to naming conventions, entity and relationship type names should be expressed in this format.", answer: "Uppercase Letters or ALL CAPS" },
+        { value: 2800, question: "According to naming conventions, attribute and role names should have this format.", answer: "Initial Letter Capitalized" },
+        { value: 2900, question: "Name the seven types of attributes in the ER Model.", answer: "Atomic, Composite, Single-Valued, Multivalued, Derived, Complex, Key" },
+        { value: 3000, question: "Name the three phases of database design after Requirements Collection and Analysis.", answer: "Conceptual Design, Logical Design, Physical Design" },
+        { value: 3100, question: "Name the two types of constraints in ER relationships.", answer: "Cardinality Ratio and Participation" },
+        { value: 3200, question: "Name the four types of cardinality ratios in ER modeling.", answer: "1:1, 1:N, N:1, M:N" },
+        { value: 3300, question: "For M:N relationships, where does the relationship attribute stay according to migration rules?", answer: "It stays with the relationship" },
+        { value: 3400, question: "For 1:N relationships, where can the relationship attribute migrate according to migration rules?", answer: "To the N side" },
+        { value: 3500, question: "An entity type with a single attribute and related to only one other entity may be reduced or demoted to this.", answer: "Attribute" },
+        { value: 3600, question: "An attribute that exists in several entity types may be elevated or promoted to this.", answer: "Independent Entity Type" },
+        { value: 3700, question: "The participation constraint of a weak entity type will always be this.", answer: "Total" },
+        { value: 3800, question: "This is recorded when the relationship is initiated between participating entities.", answer: "Relationship Attribute" },
+        { value: 3900, question: "Each entity type that participates in a relationship type plays this particular role.", answer: "Role Name" },
+        { value: 4000, question: "Name all the naming convention rules for ER diagrams.", answer: "Uppercase for Entity/Relationship types, Initial capital for Attributes/Roles, Expressed in singular terms" }
+    ]
+    }
+];
+
+        // --- DOM ELEMENTS ---
+        const board = document.getElementById('game-board');
+        const modal = document.getElementById('modal');
+        const modalCategory = document.getElementById('modal-category');
+        const modalQuestion = document.getElementById('modal-question');
+        const modalAnswer = document.getElementById('modal-answer');
+        const modalValue = document.getElementById('modal-value');
+        const revealBtn = document.querySelector('.btn-reveal');
+        const scoringSection = document.getElementById('scoring-section');
+        const scoreElements = {
+            1: document.getElementById('score1'),
+            2: document.getElementById('score2'),
+            3: document.getElementById('score3')
+        };
+
+        // --- INITIALIZATION ---
+        function initBoard() {
+            categories.forEach((cat, catIndex) => {
+                // Create category column
+                const column = document.createElement('div');
+                column.className = 'category-column';
+                
+                // Category header
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = cat;
+                column.appendChild(header);
+
+               
+
+                
+                // Questions container
+                const questionsList = document.createElement('div');
+                questionsList.className = 'questions-list';
+                
+                // Add questions
+                gameData[catIndex].questions.forEach((q, qIndex) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'question-cell';
+                    cell.textContent = `$${q.value}`;
+                    
+                    // Store question data
+                    cell.dataset.catIndex = catIndex;
+                    cell.dataset.qIndex = qIndex;
+                    cell.dataset.value = q.value;
+                    cell.dataset.question = q.question;
+                    cell.dataset.answer = q.answer;
+                    cell.dataset.category = cat;
+                    
+                    cell.addEventListener('click', () => openQuestion(cell));
+                    questionsList.appendChild(cell);
+                    cell.dataset.image = q.image || ''; 
+                });
+                
+                column.appendChild(questionsList);
+                board.appendChild(column);
+            });
+        }
+
+        // --- GAME LOGIC ---
+        function openQuestion(cell) {
+            if (cell.classList.contains('answered')) return;
+            
+            currentQuestion = {
+                cell,
+                value: parseInt(cell.dataset.value),
+                question: cell.dataset.question,
+                answer: cell.dataset.answer,
+                category: cell.dataset.category,
+                image: cell.dataset.image || null //Get image if exists
+            };
+            
+            // Setup modal
+            modalCategory.textContent = currentQuestion.category;
+            modalQuestion.textContent = currentQuestion.question;
+            modalAnswer.textContent = currentQuestion.answer;
+            modalAnswer.style.display = 'none';
+            modalValue.textContent = currentQuestion.value;
+
+            // Handle image
+            const imageContainer = document.getElementById('modal-image-container');
+            const modalImage = document.getElementById('modal-image');
+    
+            if (currentQuestion.image) {
+                modalImage.src = currentQuestion.image;
+                imageContainer.style.display = 'none';
+            } else {
+                imageContainer.style.display = 'none';
+            }
+            
+            // Reset UI
+            revealBtn.style.display = 'block';
+            scoringSection.style.display = 'none';
+            selectedTeam = null;
+            
+            // Show modal
+            modal.style.display = 'flex';
+        }
+
+        function revealAnswer() {
+            modalAnswer.style.display = 'block';
+            revealBtn.style.display = 'none';
+            scoringSection.style.display = 'block';
+
+            // Only show image if this specific question has one
+            if (currentQuestion.image) {
+                document.getElementById('modal-image-container').style.display = 'block';
+            }
+            // If no image, container stays hidden (no change needed)
+        }
+
+        function selectTeam(teamId) {
+            selectedTeam = teamId;
+            // Visual feedback
+            document.querySelectorAll('.team-btn').forEach(btn => {
+                btn.style.transform = 'scale(1)';
+                btn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+            });
+            event.target.style.transform = 'scale(1.08)';
+            event.target.style.boxShadow = '0 0 0 3px white, 0 0 20px rgba(255,255,255,0.8)';
+        }
+
+        function handleScore(isCorrect) {
+            if (!selectedTeam) {
+                alert("Please select a team first!");
+                return;
+            }
+            
+            // Update team score
+            const team = teams.find(t => t.id === selectedTeam);
+            if (isCorrect) {
+                team.score += currentQuestion.value;
+            } else {
+                team.score -= 0;
+            }
+            
+            // Update display
+            scoreElements[selectedTeam].textContent = `$${team.score.toLocaleString()}`;
+            
+            // Mark question as answered
+            currentQuestion.cell.classList.add('answered');
+            currentQuestion.cell.innerHTML = "✓";
+            
+            // Close modal after delay
+            setTimeout(() => {
+                modal.style.display = 'none';
+                currentQuestion = null;
+                selectedTeam = null;
+            }, 800);
+        }
+
+        // Close modal if clicking outside content
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Initialize the game
+        initBoard();
+
+        // Add keyboard shortcuts for accessibility
+        document.addEventListener('keydown', (e) => {
+            if (modal.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                } else if (e.key === ' ' && revealBtn.style.display !== 'none') {
+                    revealAnswer();
+                } else if (scoringSection.style.display === 'block') {
+                    if (e.key >= '1' && e.key <= '3') {
+                        selectTeam(parseInt(e.key));
+                    } else if (e.key === 'Enter' && selectedTeam) {
+                        handleScore(true);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
